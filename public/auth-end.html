@@ -7,10 +7,10 @@
   </head>
   <body>
     <p>Microsoft 로그인을 완료하는 중입니다.</p>
-    <script src="https://res.cdn.office.net/teams-js/2.34.0/js/MicrosoftTeams.min.js"></script>
     <script src="/config.js"></script>
     <script>
       const TEAMS_AUTH_POPUP_KEY = "teamsMeeting.teamsAuthPopup";
+      const TEAMS_SDK_URL = "https://res.cdn.office.net/teams-js/2.34.0/js/MicrosoftTeams.min.js";
       const MSAL_CDN_URLS = [
         "https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js",
         "https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js",
@@ -64,7 +64,14 @@
         return sessionStorage.getItem(TEAMS_AUTH_POPUP_KEY) === "1";
       }
 
+      async function ensureTeamsLoaded() {
+        if (!window.microsoftTeams) {
+          await loadScript(TEAMS_SDK_URL);
+        }
+      }
+
       async function initializeTeamsForPopup() {
+        await ensureTeamsLoaded();
         await Promise.race([
           microsoftTeams.app.initialize(),
           new Promise((_, reject) =>
@@ -73,8 +80,9 @@
         ]);
       }
 
-      function notifyTeamsFailure(error) {
-        if (window.microsoftTeams?.authentication) {
+      async function notifyTeamsFailure(error) {
+        if (isTeamsAuthFlow()) {
+          await initializeTeamsForPopup();
           microsoftTeams.authentication.notifyFailure(error.message || "login_failed");
           return;
         }
@@ -136,7 +144,7 @@
             }),
           );
         } catch (error) {
-          notifyTeamsFailure(error);
+          await notifyTeamsFailure(error);
         }
       }
 
