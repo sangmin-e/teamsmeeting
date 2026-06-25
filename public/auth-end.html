@@ -105,8 +105,8 @@
               redirectUri: `${window.location.origin}/auth-end.html`,
             },
             cache: {
-              cacheLocation: "localStorage",
-              storeAuthStateInCookie: true,
+              cacheLocation: "sessionStorage",
+              storeAuthStateInCookie: false,
             },
           });
 
