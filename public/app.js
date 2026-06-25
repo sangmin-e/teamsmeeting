@@ -26,6 +26,7 @@ const TEAMS_SDK_URL = "https://res.cdn.office.net/teams-js/2.34.0/js/MicrosoftTe
 let msalClient = null;
 let activeAccount = null;
 let teamsAuthResult = null;
+let webAuthResult = null;
 let meetings = [];
 let msalLoaderPromise = null;
 let authReadyPromise = null;
@@ -171,6 +172,29 @@ function hasUsableTeamsToken() {
   }
 
   return Number(teamsAuthResult.expiresOn) - Date.now() > 60_000;
+}
+
+function rememberWebAuthResult(result) {
+  if (!result?.accessToken) {
+    return;
+  }
+
+  webAuthResult = {
+    accessToken: result.accessToken,
+    expiresOn: result.expiresOn?.getTime?.() || 0,
+  };
+}
+
+function hasUsableWebToken() {
+  if (!webAuthResult?.accessToken) {
+    return false;
+  }
+
+  if (!webAuthResult.expiresOn) {
+    return true;
+  }
+
+  return Number(webAuthResult.expiresOn) - Date.now() > 60_000;
 }
 
 function pickPreferredAccount(accounts) {
@@ -409,6 +433,7 @@ async function signIn() {
   clearStoredAuthCache();
   activeAccount = null;
   teamsAuthResult = null;
+  webAuthResult = null;
   authReadyPromise = null;
   msalClient = null;
   renderAccountInfo();
@@ -469,6 +494,7 @@ async function signIn() {
 
   activeAccount = loginResult.account;
   msalClient.setActiveAccount(activeAccount);
+  rememberWebAuthResult(loginResult);
   rememberAccount(activeAccount);
   renderAccountInfo();
   setStatus("로그인 성공. 기간 조회를 실행하세요.");
@@ -487,17 +513,22 @@ async function signOut() {
 
   activeAccount = null;
   teamsAuthResult = null;
+  webAuthResult = null;
   localStorage.removeItem(LAST_ACCOUNT_KEY);
   renderAccountInfo();
   setStatus("로그아웃되었습니다.");
 }
 
 async function getAccessToken() {
-  await ensureAuthReady();
-
   if (isEmbeddedContext() && hasUsableTeamsToken()) {
     return teamsAuthResult.accessToken;
   }
+
+  if (!isEmbeddedContext() && hasUsableWebToken()) {
+    return webAuthResult.accessToken;
+  }
+
+  await ensureAuthReady();
 
   if (isEmbeddedContext() && teamsAuthResult?.username) {
     throw new Error("로그인 토큰이 만료되었습니다. Microsoft 로그인을 다시 실행한 뒤 조회하세요.");
@@ -514,6 +545,7 @@ async function getAccessToken() {
     });
 
     rememberAccount(activeAccount);
+    rememberWebAuthResult(silent);
 
     return silent.accessToken;
   } catch (error) {
@@ -521,6 +553,23 @@ async function getAccessToken() {
       activeAccount = null;
       renderAccountInfo();
       throw new Error("로그인이 만료되었거나 권한 확인이 필요합니다. Microsoft 로그인을 다시 실행한 뒤 조회하세요.");
+    }
+
+    const raw = String(error?.message || "");
+    const code = error?.errorCode || error?.code || "";
+    if (
+      code === "interaction_required" ||
+      code === "consent_required" ||
+      code === "login_required" ||
+      raw.includes("interaction_required")
+    ) {
+      const popup = await msalClient.acquireTokenPopup({
+        scopes: GRAPH_SCOPES,
+        account: activeAccount,
+        prompt: "select_account",
+      });
+      rememberWebAuthResult(popup);
+      return popup.accessToken;
     }
 
     throw new Error(toUserErrorMessage(error, "토큰을 가져오지 못했습니다. Microsoft 로그인을 다시 시도하세요."));
