@@ -15,6 +15,7 @@ const copyAllBtn = document.getElementById("copyAllBtn");
 const GRAPH_SCOPES = ["Calendars.Read"];
 const REDIRECT_FLAG_KEY = "teamsMeeting.authRedirectInFlight";
 const LAST_ACCOUNT_KEY = "teamsMeeting.lastAccount";
+const LOGIN_FALLBACK_KEY = "teamsMeeting.loginFallbackInFlight";
 const MSAL_CDN_URLS = [
   "https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js",
   "https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js",
@@ -328,7 +329,7 @@ async function createMsalClient() {
       redirectUri: window.location.origin,
     },
     cache: {
-      cacheLocation: "localStorage",
+      cacheLocation: "sessionStorage",
       storeAuthStateInCookie: true,
     },
   });
@@ -427,7 +428,30 @@ async function signIn() {
 
   setStatus("Microsoft 로그인 팝업을 여는 중입니다.");
 
-  const loginResult = await msalClient.loginPopup(loginRequest);
+  let loginResult = null;
+  try {
+    loginResult = await msalClient.loginPopup(loginRequest);
+  } catch (error) {
+    const raw = String(error?.message || "");
+    const code = error?.errorCode || error?.code || "";
+    if (
+      code === "popup_window_error" ||
+      code === "user_cancelled" ||
+      raw.includes("popup_window_error") ||
+      raw.includes("user_cancelled")
+    ) {
+      sessionStorage.setItem(LOGIN_FALLBACK_KEY, "1");
+      setStatus("팝업 로그인이 완료되지 않아 전체 화면 로그인으로 전환합니다.");
+      await msalClient.loginRedirect({
+        ...loginRequest,
+        redirectStartPage: window.location.origin,
+      });
+      return;
+    }
+
+    throw error;
+  }
+
   if (!loginResult?.account) {
     throw new Error("로그인 계정을 확인하지 못했습니다.");
   }
@@ -678,6 +702,7 @@ async function initApp() {
 
   try {
     await ensureAuthReady();
+    sessionStorage.removeItem(LOGIN_FALLBACK_KEY);
     setStatus(activeAccount ? "로그인 상태입니다. 기간 조회를 실행하세요." : "Microsoft 로그인 후 기간 조회를 실행하세요.");
   } catch (error) {
     setStatus(error.message || "로그인 응답 처리 실패", true);
