@@ -16,6 +16,7 @@ const GRAPH_SCOPES = ["Calendars.Read"];
 const REDIRECT_FLAG_KEY = "teamsMeeting.authRedirectInFlight";
 const LAST_ACCOUNT_KEY = "teamsMeeting.lastAccount";
 const LOGIN_FALLBACK_KEY = "teamsMeeting.loginFallbackInFlight";
+const SAVED_AUTH_KEY = "teamsMeeting.savedAuth";
 const MSAL_CDN_URLS = [
   "https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js",
   "https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js",
@@ -66,7 +67,6 @@ function clearAuthInteractionState() {
     for (const key of Object.keys(storage)) {
       const normalized = key.toLowerCase();
       if (
-        normalized.includes("msal") ||
         normalized.includes("interaction.status") ||
         normalized.includes("interaction_in_progress")
       ) {
@@ -89,6 +89,15 @@ function clearAuthInteractionState() {
 function clearStoredAuthCache() {
   clearAuthInteractionState();
   localStorage.removeItem(LAST_ACCOUNT_KEY);
+  localStorage.removeItem(SAVED_AUTH_KEY);
+
+  for (const storage of [sessionStorage, localStorage]) {
+    for (const key of Object.keys(storage)) {
+      if (key.toLowerCase().includes("msal")) {
+        storage.removeItem(key);
+      }
+    }
+  }
 }
 
 function hasAuthResponseInUrl() {
@@ -183,6 +192,57 @@ function rememberWebAuthResult(result) {
     accessToken: result.accessToken,
     expiresOn: result.expiresOn?.getTime?.() || 0,
   };
+}
+
+function saveSignedInState(account, tokenResult) {
+  if (!account?.username || !tokenResult?.accessToken) {
+    return;
+  }
+
+  const saved = {
+    username: account.username,
+    homeAccountId: account.homeAccountId || "",
+    localAccountId: account.localAccountId || "",
+    accessToken: tokenResult.accessToken,
+    expiresOn: tokenResult.expiresOn?.getTime?.() || 0,
+  };
+
+  localStorage.setItem(SAVED_AUTH_KEY, JSON.stringify(saved));
+}
+
+function restoreSignedInState() {
+  const raw = localStorage.getItem(SAVED_AUTH_KEY);
+  if (!raw) {
+    return false;
+  }
+
+  try {
+    const saved = JSON.parse(raw);
+    if (!saved?.username || !saved?.accessToken) {
+      return false;
+    }
+
+    if (saved.expiresOn && Number(saved.expiresOn) - Date.now() <= 60_000) {
+      localStorage.removeItem(SAVED_AUTH_KEY);
+      return false;
+    }
+
+    activeAccount = {
+      username: saved.username,
+      homeAccountId: saved.homeAccountId,
+      localAccountId: saved.localAccountId,
+    };
+    webAuthResult = {
+      accessToken: saved.accessToken,
+      expiresOn: saved.expiresOn || 0,
+    };
+    localStorage.setItem(LAST_ACCOUNT_KEY, saved.username);
+    renderAccountInfo();
+    return true;
+  } catch {
+    localStorage.removeItem(SAVED_AUTH_KEY);
+    return false;
+  }
 }
 
 function hasUsableWebToken() {
@@ -471,6 +531,7 @@ async function signIn() {
   activeAccount = loginResult.account;
   msalClient.setActiveAccount(activeAccount);
   rememberWebAuthResult(loginResult);
+  saveSignedInState(activeAccount, loginResult);
   rememberAccount(activeAccount);
   renderAccountInfo();
   setStatus("로그인 성공. 기간 조회를 실행하세요.");
@@ -491,6 +552,7 @@ async function signOut() {
   teamsAuthResult = null;
   webAuthResult = null;
   localStorage.removeItem(LAST_ACCOUNT_KEY);
+  localStorage.removeItem(SAVED_AUTH_KEY);
   renderAccountInfo();
   setStatus("로그아웃되었습니다.");
 }
@@ -522,6 +584,7 @@ async function getAccessToken() {
 
     rememberAccount(activeAccount);
     rememberWebAuthResult(silent);
+    saveSignedInState(activeAccount, silent);
 
     return silent.accessToken;
   } catch (error) {
@@ -539,6 +602,7 @@ async function getAccessToken() {
         prompt: "select_account",
       });
       rememberWebAuthResult(popup);
+      saveSignedInState(activeAccount, popup);
       return popup.accessToken;
     }
 
@@ -726,6 +790,14 @@ async function initApp() {
 
   if (!hasAuthResponseInUrl()) {
     clearAuthInteractionState();
+    if (restoreSignedInState()) {
+      setStatus("로그인 상태입니다. 기간 조회를 실행하세요.");
+      ensureMsalClientReady().catch(() => {
+        // The login button will surface the error if setup is still unavailable.
+      });
+      return;
+    }
+
     setStatus("Microsoft 로그인 후 기간 조회를 실행하세요.");
     ensureMsalClientReady().catch(() => {
       // The login button will surface the error if setup is still unavailable.
