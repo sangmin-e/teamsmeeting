@@ -68,6 +68,22 @@ function clearAuthInteractionState() {
   }
 }
 
+function clearStoredAuthCache() {
+  clearAuthInteractionState();
+  localStorage.removeItem(LAST_ACCOUNT_KEY);
+
+  for (const key of Object.keys(localStorage)) {
+    const normalized = key.toLowerCase();
+    if (
+      normalized.includes("msal") ||
+      normalized.includes("interaction.status") ||
+      normalized.includes("interaction_in_progress")
+    ) {
+      localStorage.removeItem(key);
+    }
+  }
+}
+
 function hasAuthResponseInUrl() {
   const params = `${window.location.search || ""} ${window.location.hash || ""}`;
   return params.includes("code=") || params.includes("state=") || params.includes("error=");
@@ -372,17 +388,23 @@ function renderAccountInfo() {
 }
 
 async function signIn() {
-  await ensureAuthReady();
-
-  if (activeAccount || hasUsableTeamsToken()) {
-    sessionStorage.removeItem(REDIRECT_FLAG_KEY);
+  if (isEmbeddedContext() && hasUsableTeamsToken()) {
+    clearAuthInteractionState();
     setStatus("이미 로그인되어 있습니다. 기간 조회를 실행하세요.");
     return;
   }
 
+  clearStoredAuthCache();
+  activeAccount = null;
+  teamsAuthResult = null;
+  authReadyPromise = null;
+  msalClient = null;
+  renderAccountInfo();
+  await ensureAuthReady();
+
   const loginRequest = {
     scopes: ["openid", "profile", ...GRAPH_SCOPES],
-    prompt: "select_account",
+    prompt: "login",
   };
 
   if (isEmbeddedContext()) {
@@ -403,7 +425,6 @@ async function signIn() {
     return;
   }
 
-  clearAuthInteractionState();
   setStatus("Microsoft 로그인 팝업을 여는 중입니다.");
 
   const loginResult = await msalClient.loginPopup(loginRequest);
