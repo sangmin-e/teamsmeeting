@@ -54,6 +54,10 @@ function setStatus(message, isError = false) {
   statusEl.classList.toggle("error", isError);
 }
 
+function isEmbeddedContext() {
+  return window.self !== window.top;
+}
+
 function rememberAccount(account) {
   if (!account?.username) {
     return;
@@ -272,7 +276,25 @@ async function signIn() {
   await ensureAuthReady();
 
   if (activeAccount) {
+    sessionStorage.removeItem(REDIRECT_FLAG_KEY);
     setStatus("이미 로그인되어 있습니다. 기간 조회를 실행하세요.");
+    return;
+  }
+
+  const loginRequest = {
+    scopes: ["openid", "profile", ...GRAPH_SCOPES],
+    prompt: "select_account",
+  };
+
+  // Teams tabs run inside an embedded webview/iframe.
+  // Popup auth is generally more reliable than full-page redirect there.
+  if (isEmbeddedContext()) {
+    const response = await msalClient.loginPopup(loginRequest);
+    activeAccount = response.account;
+    msalClient.setActiveAccount(activeAccount);
+    rememberAccount(activeAccount);
+    setStatus("로그인 성공. 기간 조회를 실행하세요.");
+    renderAccountInfo();
     return;
   }
 
@@ -284,8 +306,7 @@ async function signIn() {
   sessionStorage.setItem(REDIRECT_FLAG_KEY, "1");
 
   await msalClient.loginRedirect({
-    scopes: ["openid", "profile", ...GRAPH_SCOPES],
-    prompt: "select_account",
+    ...loginRequest,
     redirectStartPage: window.location.href,
   });
 }
@@ -324,6 +345,14 @@ async function getAccessToken() {
 
     return silent.accessToken;
   } catch (error) {
+    if (isEmbeddedContext()) {
+      const popup = await msalClient.acquireTokenPopup({
+        scopes: GRAPH_SCOPES,
+        account: activeAccount,
+      });
+      return popup.accessToken;
+    }
+
     throw new Error(toUserErrorMessage(error, "토큰을 가져오지 못했습니다. Microsoft 로그인을 다시 시도하세요."));
   }
 }

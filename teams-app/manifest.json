@@ -1,14 +1,14 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.17",
+  "manifestVersion": "1.16",
   "version": "1.0.0",
-  "id": "REPLACE_WITH_APP_GUID",
+  "id": "26aaeb62-5d8e-4fb1-a8bf-63ca7ddbcbfc",
   "packageName": "com.example.teamsmeetingcopier",
   "developer": {
     "name": "Your Company",
-    "websiteUrl": "https://YOUR_NETLIFY_DOMAIN",
-    "privacyUrl": "https://YOUR_NETLIFY_DOMAIN/privacy",
-    "termsOfUseUrl": "https://YOUR_NETLIFY_DOMAIN/terms"
+    "websiteUrl": "https://teamsmeetings.netlify.app",
+    "privacyUrl": "https://teamsmeetings.netlify.app/privacy",
+    "termsOfUseUrl": "https://teamsmeetings.netlify.app/terms"
   },
   "name": {
     "short": "Meeting Copier",
@@ -27,11 +27,11 @@
     {
       "entityId": "meeting-copier-tab",
       "name": "Meeting Copier",
-      "contentUrl": "https://YOUR_NETLIFY_DOMAIN",
-      "websiteUrl": "https://YOUR_NETLIFY_DOMAIN",
+      "contentUrl": "https://teamsmeetings.netlify.app",
+      "websiteUrl": "https://teamsmeetings.netlify.app",
       "scopes": ["personal"]
     }
   ],
-  "permissions": ["identity", "messageTeamMembers"],
-  "validDomains": ["YOUR_NETLIFY_DOMAIN"]
+  "permissions": ["identity"],
+  "validDomains": ["teamsmeetings.netlify.app"]
 }

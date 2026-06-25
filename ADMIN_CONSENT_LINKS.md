@@ -14,19 +14,19 @@ Client ID:
 3. copilots.kr
 - https://login.microsoftonline.com/copilots.kr/adminconsent?client_id=e6199027-564c-4725-b531-9543589eab52&redirect_uri=http%3A%2F%2Flocalhost%3A5500
 
-## Netlify (replace domain)
+## Netlify
 
-Redirect URI template:
-- https://YOUR_NETLIFY_DOMAIN
+Redirect URI:
+- https://teamsmeetings.netlify.app
 
 1. ogeum.sen.ms.kr
-- https://login.microsoftonline.com/ogeum.sen.ms.kr/adminconsent?client_id=e6199027-564c-4725-b531-9543589eab52&redirect_uri=https%3A%2F%2FYOUR_NETLIFY_DOMAIN
+- https://login.microsoftonline.com/ogeum.sen.ms.kr/adminconsent?client_id=e6199027-564c-4725-b531-9543589eab52&redirect_uri=https%3A%2F%2Fteamsmeetings.netlify.app
 
 2. microedu.kr
-- https://login.microsoftonline.com/microedu.kr/adminconsent?client_id=e6199027-564c-4725-b531-9543589eab52&redirect_uri=https%3A%2F%2FYOUR_NETLIFY_DOMAIN
+- https://login.microsoftonline.com/microedu.kr/adminconsent?client_id=e6199027-564c-4725-b531-9543589eab52&redirect_uri=https%3A%2F%2Fteamsmeetings.netlify.app
 
 3. copilots.kr
-- https://login.microsoftonline.com/copilots.kr/adminconsent?client_id=e6199027-564c-4725-b531-9543589eab52&redirect_uri=https%3A%2F%2FYOUR_NETLIFY_DOMAIN
+- https://login.microsoftonline.com/copilots.kr/adminconsent?client_id=e6199027-564c-4725-b531-9543589eab52&redirect_uri=https%3A%2F%2Fteamsmeetings.netlify.app
 
 ## Verification (required)
 
