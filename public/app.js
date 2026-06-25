@@ -68,6 +68,11 @@ function clearAuthInteractionState() {
   }
 }
 
+function hasAuthResponseInUrl() {
+  const params = `${window.location.search || ""} ${window.location.hash || ""}`;
+  return params.includes("code=") || params.includes("state=") || params.includes("error=");
+}
+
 function isEmbeddedContext() {
   return window.self !== window.top;
 }
@@ -634,15 +639,17 @@ async function initApp() {
   setDefaultDateRange();
   renderAccountInfo();
 
+  if (!hasAuthResponseInUrl()) {
+    clearAuthInteractionState();
+    setStatus("Microsoft 로그인 후 기간 조회를 실행하세요.");
+    return;
+  }
+
   try {
     await ensureAuthReady();
-    if (activeAccount) {
-      setStatus("로그인 상태입니다. 기간 조회를 실행하세요.");
-    } else {
-      setStatus("Microsoft 로그인 후 기간 조회를 실행하세요.");
-    }
+    setStatus(activeAccount ? "로그인 상태입니다. 기간 조회를 실행하세요." : "Microsoft 로그인 후 기간 조회를 실행하세요.");
   } catch (error) {
-    setStatus(error.message || "로그인 초기화 실패", true);
+    setStatus(error.message || "로그인 응답 처리 실패", true);
   }
 }
 
