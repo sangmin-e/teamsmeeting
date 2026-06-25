@@ -186,6 +186,14 @@ function toUserErrorMessage(error, fallback) {
     return "관리자 동의가 아직 반영되지 않았습니다. 아래 관리자 동의 링크로 테넌트별 승인 후 다시 로그인하세요.";
   }
 
+  if (code === "popup_window_error" || raw.includes("popup_window_error")) {
+    return "로그인 팝업을 열지 못했습니다. 브라우저 팝업 차단을 해제한 뒤 다시 시도하세요.";
+  }
+
+  if (code === "user_cancelled" || raw.includes("user_cancelled")) {
+    return "로그인 창이 닫혔습니다. Microsoft 로그인을 다시 눌러주세요.";
+  }
+
   return raw || fallback;
 }
 
@@ -395,17 +403,19 @@ async function signIn() {
     return;
   }
 
-  if (sessionStorage.getItem(REDIRECT_FLAG_KEY) === "1") {
-    setStatus("로그인 진행 중입니다. 열린 Microsoft 로그인 창을 완료하세요.", true);
-    return;
+  clearAuthInteractionState();
+  setStatus("Microsoft 로그인 팝업을 여는 중입니다.");
+
+  const loginResult = await msalClient.loginPopup(loginRequest);
+  if (!loginResult?.account) {
+    throw new Error("로그인 계정을 확인하지 못했습니다.");
   }
 
-  sessionStorage.setItem(REDIRECT_FLAG_KEY, "1");
-
-  await msalClient.loginRedirect({
-    ...loginRequest,
-    redirectStartPage: window.location.href,
-  });
+  activeAccount = loginResult.account;
+  msalClient.setActiveAccount(activeAccount);
+  rememberAccount(activeAccount);
+  renderAccountInfo();
+  setStatus("로그인 성공. 기간 조회를 실행하세요.");
 }
 
 async function signOut() {
