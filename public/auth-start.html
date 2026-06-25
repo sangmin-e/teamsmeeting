@@ -97,6 +97,7 @@
         try {
           if (!isTeamsAuthFlow()) {
             sessionStorage.removeItem(TEAMS_AUTH_POPUP_KEY);
+            localStorage.removeItem(TEAMS_AUTH_POPUP_KEY);
             window.location.replace(window.location.origin);
             return;
           }
@@ -107,6 +108,7 @@
           const redirectUri = `${window.location.origin}/auth-end.html`;
 
           sessionStorage.setItem(TEAMS_AUTH_POPUP_KEY, "1");
+          localStorage.setItem(TEAMS_AUTH_POPUP_KEY, "1");
 
           const client = new window.msal.PublicClientApplication({
             auth: {

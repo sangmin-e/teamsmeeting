@@ -61,7 +61,10 @@
       }
 
       function isTeamsAuthFlow() {
-        return sessionStorage.getItem(TEAMS_AUTH_POPUP_KEY) === "1";
+        return (
+          sessionStorage.getItem(TEAMS_AUTH_POPUP_KEY) === "1" ||
+          localStorage.getItem(TEAMS_AUTH_POPUP_KEY) === "1"
+        );
       }
 
       async function ensureTeamsLoaded() {
@@ -136,6 +139,7 @@
 
           await initializeTeamsForPopup();
           sessionStorage.removeItem(TEAMS_AUTH_POPUP_KEY);
+          localStorage.removeItem(TEAMS_AUTH_POPUP_KEY);
           microsoftTeams.authentication.notifySuccess(
             JSON.stringify({
               username: account.username,

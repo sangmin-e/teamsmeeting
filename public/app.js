@@ -455,8 +455,6 @@ async function signIn() {
     });
 
     rememberTeamsAuthResult(parseTeamsAuthResult(authResult));
-    authReadyPromise = null;
-    await ensureAuthReady();
     renderAccountInfo();
     setStatus("로그인 성공. 기간 조회를 실행하세요.");
     return;
