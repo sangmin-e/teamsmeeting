@@ -374,6 +374,12 @@ async function ensureAuthReady() {
   return authReadyPromise;
 }
 
+async function ensureMsalClientReady() {
+  if (!msalClient) {
+    await createMsalClient();
+  }
+}
+
 function renderAccountInfo() {
   if (teamsAuthResult?.username) {
     accountInfoEl.textContent = `로그인 계정: ${teamsAuthResult.username}`;
@@ -401,7 +407,7 @@ async function signIn() {
   authReadyPromise = null;
   msalClient = null;
   renderAccountInfo();
-  await ensureAuthReady();
+  await ensureMsalClientReady();
 
   const loginRequest = {
     scopes: ["openid", "profile", ...GRAPH_SCOPES],
@@ -697,6 +703,9 @@ async function initApp() {
   if (!hasAuthResponseInUrl()) {
     clearAuthInteractionState();
     setStatus("Microsoft 로그인 후 기간 조회를 실행하세요.");
+    ensureMsalClientReady().catch(() => {
+      // The login button will surface the error if setup is still unavailable.
+    });
     return;
   }
 
