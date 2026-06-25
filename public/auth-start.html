@@ -9,6 +9,12 @@
         sessionStorage.clear();
         window.location.replace("/");
       }
+
+      setTimeout(() => {
+        if (new URLSearchParams(window.location.search).get("teams") !== "1") {
+          window.location.href = "/";
+        }
+      }, 500);
     </script>
   </head>
   <body>
