@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Microsoft login complete</title>
+  </head>
+  <body>
+    <p>Microsoft 로그인을 완료하는 중입니다.</p>
+    <script src="https://res.cdn.office.net/teams-js/2.34.0/js/MicrosoftTeams.min.js"></script>
+    <script src="https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js"></script>
+    <script src="/config.js"></script>
+    <script>
+      function getAppConfig() {
+        const config = window.APP_CONFIG || {};
+        return {
+          tenant: (config.tenant || "organizations").trim(),
+          clientId: (config.clientId || "").trim(),
+        };
+      }
+
+      function buildAuthority() {
+        const tenant = getAppConfig().tenant;
+        return `https://login.microsoftonline.com/${tenant || "organizations"}`;
+      }
+
+      async function completeAuth() {
+        try {
+          await microsoftTeams.app.initialize();
+
+          const { clientId } = getAppConfig();
+          const client = new msal.PublicClientApplication({
+            auth: {
+              clientId,
+              authority: buildAuthority(),
+              redirectUri: `${window.location.origin}/auth-end.html`,
+            },
+            cache: {
+              cacheLocation: "localStorage",
+              storeAuthStateInCookie: true,
+            },
+          });
+
+          const result = await client.handleRedirectPromise();
+          const account = result?.account || client.getAllAccounts()[0];
+
+          if (!account) {
+            throw new Error("로그인 계정을 확인하지 못했습니다.");
+          }
+
+          client.setActiveAccount(account);
+          localStorage.setItem("teamsMeeting.lastAccount", account.username);
+          microsoftTeams.authentication.notifySuccess(account.username);
+        } catch (error) {
+          microsoftTeams.authentication.notifyFailure(error.message || "login_failed");
+        }
+      }
+
+      completeAuth();
+    </script>
+  </body>
+</html>

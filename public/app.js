@@ -20,12 +20,14 @@ const MSAL_CDN_URLS = [
   "https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js",
   "https://unpkg.com/@azure/msal-browser@2.38.4/lib/msal-browser.min.js",
 ];
+const TEAMS_SDK_URL = "https://res.cdn.office.net/teams-js/2.34.0/js/MicrosoftTeams.min.js";
 
 let msalClient = null;
 let activeAccount = null;
 let meetings = [];
 let msalLoaderPromise = null;
 let authReadyPromise = null;
+let teamsReadyPromise = null;
 
 function getAppConfig() {
   const config = window.APP_CONFIG || {};
@@ -56,6 +58,27 @@ function setStatus(message, isError = false) {
 
 function isEmbeddedContext() {
   return window.self !== window.top;
+}
+
+async function ensureTeamsReady() {
+  if (!isEmbeddedContext()) {
+    return false;
+  }
+
+  if (teamsReadyPromise) {
+    return teamsReadyPromise;
+  }
+
+  teamsReadyPromise = (async () => {
+    if (!window.microsoftTeams) {
+      await loadScript(TEAMS_SDK_URL);
+    }
+
+    await window.microsoftTeams.app.initialize();
+    return true;
+  })();
+
+  return teamsReadyPromise;
 }
 
 function rememberAccount(account) {
@@ -286,15 +309,20 @@ async function signIn() {
     prompt: "select_account",
   };
 
-  // Teams tabs run inside an embedded webview/iframe.
-  // Popup auth is generally more reliable than full-page redirect there.
   if (isEmbeddedContext()) {
-    const response = await msalClient.loginPopup(loginRequest);
-    activeAccount = response.account;
-    msalClient.setActiveAccount(activeAccount);
-    rememberAccount(activeAccount);
-    setStatus("로그인 성공. 기간 조회를 실행하세요.");
+    await ensureTeamsReady();
+    setStatus("Microsoft 로그인 창을 여는 중입니다. 로그인을 완료하세요.");
+
+    await window.microsoftTeams.authentication.authenticate({
+      url: `${window.location.origin}/auth-start.html`,
+      width: 640,
+      height: 720,
+    });
+
+    authReadyPromise = null;
+    await ensureAuthReady();
     renderAccountInfo();
+    setStatus("로그인 성공. 기간 조회를 실행하세요.");
     return;
   }
 
@@ -346,11 +374,9 @@ async function getAccessToken() {
     return silent.accessToken;
   } catch (error) {
     if (isEmbeddedContext()) {
-      const popup = await msalClient.acquireTokenPopup({
-        scopes: GRAPH_SCOPES,
-        account: activeAccount,
-      });
-      return popup.accessToken;
+      activeAccount = null;
+      renderAccountInfo();
+      throw new Error("로그인이 만료되었거나 권한 확인이 필요합니다. Microsoft 로그인을 다시 실행한 뒤 조회하세요.");
     }
 
     throw new Error(toUserErrorMessage(error, "토큰을 가져오지 못했습니다. Microsoft 로그인을 다시 시도하세요."));
@@ -548,3 +574,4 @@ async function initApp() {
 }
 
 initApp();
+
