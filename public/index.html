@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teams Meeting Copier</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="hero card">
+        <h1 class="hero-title">
+          <img class="hero-logo" src="/teams-logo.svg" alt="Teams logo" />
+          <span>TEAMS Meetings</span>
+        </h1>
+      </section>
+
+      <section class="card">
+        <h2>연결 설정</h2>
+        <p class="meta">Microsoft 계정으로 로그인한 뒤 기간 조회를 실행하세요.</p>
+        <div class="actions">
+          <button id="signInBtn" class="btn secondary">Microsoft 로그인</button>
+          <button id="signOutBtn" class="btn ghost">로그아웃</button>
+        </div>
+        <p id="accountInfo" class="meta"></p>
+      </section>
+
+      <section class="card">
+        <h2>회의 조회</h2>
+        <div class="date-grid">
+          <div class="row">
+            <label for="startDate">시작 일시</label>
+            <input id="startDate" type="datetime-local" />
+          </div>
+          <div class="row">
+            <label for="endDate">종료 일시</label>
+            <input id="endDate" type="datetime-local" />
+          </div>
+        </div>
+        <div class="actions">
+          <button id="fetchBtn" class="btn primary">기간 조회</button>
+          <button id="copySelectedBtn" class="btn secondary">선택 복사</button>
+          <button id="copyAllBtn" class="btn ghost">전체 복사</button>
+        </div>
+        <p id="status" class="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card">
+        <h2>조회 결과</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>선택</th>
+                <th>주제</th>
+                <th>일시</th>
+                <th>링크</th>
+                <th>동작</th>
+              </tr>
+            </thead>
+            <tbody id="meetingRows"></tbody>
+          </table>
+        </div>
+        <p id="emptyState" class="meta">조회 결과가 없습니다.</p>
+      </section>
+
+      <section class="card">
+        <h2>복사 미리보기</h2>
+        <div class="row">
+          <label for="previewText">클립보드로 복사될 텍스트</label>
+          <textarea id="previewText" placeholder="조회 후 선택 복사 또는 전체 복사를 누르세요."></textarea>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js"></script>
+    <script src="/config.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

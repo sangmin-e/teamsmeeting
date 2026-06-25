@@ -1,0 +1,37 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "1.0.0",
+  "id": "REPLACE_WITH_APP_GUID",
+  "packageName": "com.example.teamsmeetingcopier",
+  "developer": {
+    "name": "Your Company",
+    "websiteUrl": "https://YOUR_NETLIFY_DOMAIN",
+    "privacyUrl": "https://YOUR_NETLIFY_DOMAIN/privacy",
+    "termsOfUseUrl": "https://YOUR_NETLIFY_DOMAIN/terms"
+  },
+  "name": {
+    "short": "Meeting Copier",
+    "full": "Teams Meeting One-Click Copier"
+  },
+  "description": {
+    "short": "기간별 Teams 회의 조회 및 복사",
+    "full": "Teams 일정에서 기간별 회의를 조회해 주제, 일시, 링크를 선택 복사할 수 있는 도구"
+  },
+  "accentColor": "#0f766e",
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "staticTabs": [
+    {
+      "entityId": "meeting-copier-tab",
+      "name": "Meeting Copier",
+      "contentUrl": "https://YOUR_NETLIFY_DOMAIN",
+      "websiteUrl": "https://YOUR_NETLIFY_DOMAIN",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": ["YOUR_NETLIFY_DOMAIN"]
+}

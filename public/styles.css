@@ -1,0 +1,226 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+
+:root {
+  --bg-a: #f8f4e8;
+  --bg-b: #eaf3ef;
+  --ink: #1f2937;
+  --ink-soft: #4b5563;
+  --card: rgba(255, 255, 255, 0.78);
+  --line: rgba(31, 41, 55, 0.12);
+  --accent: #0f766e;
+  --accent-2: #f59e0b;
+  --danger: #b91c1c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Pretendard", "Segoe UI", sans-serif;
+  background: #ffffff;
+}
+
+.layout {
+  width: min(900px, 92vw);
+  margin: 48px auto;
+  display: grid;
+  gap: 18px;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  backdrop-filter: blur(8px);
+  padding: 20px;
+  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.08);
+  animation: rise 500ms ease both;
+}
+
+.hero h1 {
+  margin: 8px 0 10px;
+  line-height: 1.2;
+}
+
+.hero-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.hero p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+textarea,
+input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  font-family: "Pretendard", "Segoe UI", sans-serif;
+  font-size: 15px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+textarea {
+  min-height: 180px;
+  resize: vertical;
+}
+
+.row {
+  margin-bottom: 12px;
+}
+
+.date-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 10px 8px;
+  vertical-align: top;
+}
+
+th {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+td a {
+  color: var(--accent);
+}
+
+h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.meta {
+  color: var(--ink-soft);
+  margin-bottom: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  padding: 11px 14px;
+  min-width: 112px;
+  height: 48px;
+  font-family: "Pretendard", "Segoe UI", sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.small {
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+.primary {
+  background: var(--accent);
+  color: white;
+}
+
+.secondary {
+  background: #0ea5e9;
+  color: white;
+}
+
+.ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+#previewText {
+  min-height: 220px;
+}
+
+.status {
+  min-height: 20px;
+  margin-top: 10px;
+  color: var(--ink-soft);
+}
+
+.status.error {
+  color: var(--danger);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .layout {
+    margin: 20px auto 30px;
+  }
+
+  .card {
+    border-radius: 14px;
+    padding: 15px;
+  }
+
+  .date-grid {
+    grid-template-columns: 1fr;
+  }
+}
