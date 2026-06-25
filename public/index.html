@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Teams Meeting Copier</title>
+    <script>
+      if (new URLSearchParams(window.location.search).get("reset") === "1") {
+        localStorage.clear();
+        sessionStorage.clear();
+        if (window.caches) {
+          caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))));
+        }
+        window.location.replace("/");
+      }
+    </script>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>

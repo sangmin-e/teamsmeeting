@@ -6,6 +6,7 @@
     <title>Microsoft login</title>
     <script>
       if (new URLSearchParams(window.location.search).get("teams") !== "1") {
+        sessionStorage.clear();
         window.location.replace("/");
       }
     </script>
