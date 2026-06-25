@@ -18,6 +18,7 @@
 
 - Authentication > Single-page application Redirect URI
   - https://YOUR_NETLIFY_DOMAIN
+  - https://YOUR_NETLIFY_DOMAIN/auth-end.html
 - API permissions
   - Microsoft Graph Delegated: Calendars.Read
 - Copy Application (client) ID

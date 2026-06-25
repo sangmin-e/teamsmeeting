@@ -10,6 +10,7 @@
     <script src="https://res.cdn.office.net/teams-js/2.34.0/js/MicrosoftTeams.min.js"></script>
     <script src="/config.js"></script>
     <script>
+      const TEAMS_AUTH_POPUP_KEY = "teamsMeeting.teamsAuthPopup";
       const MSAL_CDN_URLS = [
         "https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js",
         "https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js",
@@ -59,9 +60,30 @@
         return `https://login.microsoftonline.com/${tenant || "organizations"}`;
       }
 
+      function isTeamsAuthFlow() {
+        return sessionStorage.getItem(TEAMS_AUTH_POPUP_KEY) === "1";
+      }
+
+      async function initializeTeamsForPopup() {
+        await Promise.race([
+          microsoftTeams.app.initialize(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Teams 로그인 창 초기화가 지연되었습니다.")), 5000),
+          ),
+        ]);
+      }
+
+      function notifyTeamsFailure(error) {
+        if (window.microsoftTeams?.authentication) {
+          microsoftTeams.authentication.notifyFailure(error.message || "login_failed");
+          return;
+        }
+
+        document.body.innerHTML = `<p>${error.message || "Microsoft 로그인을 완료하지 못했습니다."}</p>`;
+      }
+
       async function completeAuth() {
         try {
-          await microsoftTeams.app.initialize();
           await ensureMsalLoaded();
 
           const { clientId } = getAppConfig();
@@ -86,9 +108,35 @@
 
           client.setActiveAccount(account);
           localStorage.setItem("teamsMeeting.lastAccount", account.username);
-          microsoftTeams.authentication.notifySuccess(account.username);
+
+          if (!isTeamsAuthFlow()) {
+            window.location.replace(window.location.origin);
+            return;
+          }
+
+          let accessToken = result?.accessToken || "";
+          let expiresOn = result?.expiresOn?.getTime?.() || 0;
+
+          if (!accessToken) {
+            const silent = await client.acquireTokenSilent({
+              scopes: ["Calendars.Read"],
+              account,
+            });
+            accessToken = silent.accessToken;
+            expiresOn = silent.expiresOn?.getTime?.() || 0;
+          }
+
+          await initializeTeamsForPopup();
+          sessionStorage.removeItem(TEAMS_AUTH_POPUP_KEY);
+          microsoftTeams.authentication.notifySuccess(
+            JSON.stringify({
+              username: account.username,
+              accessToken,
+              expiresOn,
+            }),
+          );
         } catch (error) {
-          microsoftTeams.authentication.notifyFailure(error.message || "login_failed");
+          notifyTeamsFailure(error);
         }
       }
 

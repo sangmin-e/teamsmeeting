@@ -10,6 +10,7 @@ Use this when admin approval keeps repeating.
 - Supported account types: Accounts in any organizational directory
 - Platform: Single-page application (SPA)
 - Redirect URI (local): http://localhost:5500
+- Redirect URI (Teams auth): https://YOUR_NETLIFY_DOMAIN/auth-end.html
 
 ## 2) API permissions
 
@@ -45,4 +46,5 @@ In each tenant:
 ## 7) Netlify after local success
 
 1. Add SPA redirect URI: https://YOUR_NETLIFY_DOMAIN
-2. Repeat admin consent per tenant using redirect_uri=https://YOUR_NETLIFY_DOMAIN
+2. Add SPA redirect URI: https://YOUR_NETLIFY_DOMAIN/auth-end.html
+3. Repeat admin consent per tenant using redirect_uri=https://YOUR_NETLIFY_DOMAIN

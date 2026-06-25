@@ -11,6 +11,7 @@
     <script src="/config.js"></script>
     <script>
       const GRAPH_SCOPES = ["Calendars.Read"];
+      const TEAMS_AUTH_POPUP_KEY = "teamsMeeting.teamsAuthPopup";
       const MSAL_CDN_URLS = [
         "https://alcdn.msauth.net/browser/2.38.4/js/msal-browser.min.js",
         "https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js",
@@ -60,17 +61,39 @@
         return `https://login.microsoftonline.com/${tenant || "organizations"}`;
       }
 
+      function isTeamsAuthFlow() {
+        return new URLSearchParams(window.location.search).get("teams") === "1";
+      }
+
+      function notifyTeamsFailure(error) {
+        if (isTeamsAuthFlow() && window.microsoftTeams?.authentication) {
+          microsoftTeams.authentication.notifyFailure(error.message || "login_failed");
+          return;
+        }
+
+        document.body.innerHTML = `<p>${error.message || "Microsoft 로그인을 시작하지 못했습니다."}</p>`;
+      }
+
       async function startAuth() {
         try {
-          await microsoftTeams.app.initialize();
           await ensureMsalLoaded();
 
           const { clientId } = getAppConfig();
+          const redirectUri = isTeamsAuthFlow()
+            ? `${window.location.origin}/auth-end.html`
+            : window.location.origin;
+
+          if (isTeamsAuthFlow()) {
+            sessionStorage.setItem(TEAMS_AUTH_POPUP_KEY, "1");
+          } else {
+            sessionStorage.removeItem(TEAMS_AUTH_POPUP_KEY);
+          }
+
           const client = new window.msal.PublicClientApplication({
             auth: {
               clientId,
               authority: buildAuthority(),
-              redirectUri: `${window.location.origin}/auth-end.html`,
+              redirectUri,
             },
             cache: {
               cacheLocation: "localStorage",
@@ -81,9 +104,10 @@
           await client.loginRedirect({
             scopes: ["openid", "profile", ...GRAPH_SCOPES],
             prompt: "select_account",
+            redirectStartPage: window.location.origin,
           });
         } catch (error) {
-          microsoftTeams.authentication.notifyFailure(error.message || "login_failed");
+          notifyTeamsFailure(error);
         }
       }
 

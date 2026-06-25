@@ -32,8 +32,9 @@ MS 로그인/Graph 조회를 위해서는 file:// 직접 실행이 아니라 loc
 3. Redirect URI (SPA) 추가
 4. 로컬 테스트: `http://localhost:5500` 또는 사용 중인 로컬 주소
 5. 배포 주소: `https://YOUR_NETLIFY_DOMAIN`
-6. API permissions > Microsoft Graph > Delegated: `Calendars.Read`
-7. 필요 시 Admin consent 수행
+6. Teams 로그인 완료 주소: `https://YOUR_NETLIFY_DOMAIN/auth-end.html`
+7. API permissions > Microsoft Graph > Delegated: `Calendars.Read`
+8. 필요 시 Admin consent 수행
 
 앱에서 사용할 값:
 

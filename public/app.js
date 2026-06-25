@@ -24,6 +24,7 @@ const TEAMS_SDK_URL = "https://res.cdn.office.net/teams-js/2.34.0/js/MicrosoftTe
 
 let msalClient = null;
 let activeAccount = null;
+let teamsAuthResult = null;
 let meetings = [];
 let msalLoaderPromise = null;
 let authReadyPromise = null;
@@ -87,6 +88,51 @@ function rememberAccount(account) {
   }
 
   localStorage.setItem(LAST_ACCOUNT_KEY, account.username);
+}
+
+function rememberTeamsAuthResult(result) {
+  if (!result?.accessToken) {
+    throw new Error("로그인은 완료됐지만 조회 권한 토큰을 받지 못했습니다. Entra Redirect URI와 Calendars.Read 권한 동의를 확인하세요.");
+  }
+
+  teamsAuthResult = {
+    accessToken: result.accessToken,
+    expiresOn: result.expiresOn || 0,
+    username: result.username || "",
+  };
+
+  if (teamsAuthResult.username) {
+    localStorage.setItem(LAST_ACCOUNT_KEY, teamsAuthResult.username);
+  }
+}
+
+function parseTeamsAuthResult(value) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    if (parsed?.accessToken) {
+      return parsed;
+    }
+  } catch {
+    // Older auth popups returned only the username.
+  }
+
+  return { username: value };
+}
+
+function hasUsableTeamsToken() {
+  if (!teamsAuthResult?.accessToken) {
+    return false;
+  }
+
+  if (!teamsAuthResult.expiresOn) {
+    return true;
+  }
+
+  return Number(teamsAuthResult.expiresOn) - Date.now() > 60_000;
 }
 
 function pickPreferredAccount(accounts) {
@@ -287,6 +333,11 @@ async function ensureAuthReady() {
 }
 
 function renderAccountInfo() {
+  if (teamsAuthResult?.username) {
+    accountInfoEl.textContent = `로그인 계정: ${teamsAuthResult.username}`;
+    return;
+  }
+
   if (!activeAccount) {
     accountInfoEl.textContent = "로그인되지 않았습니다.";
     return;
@@ -298,7 +349,7 @@ function renderAccountInfo() {
 async function signIn() {
   await ensureAuthReady();
 
-  if (activeAccount) {
+  if (activeAccount || hasUsableTeamsToken()) {
     sessionStorage.removeItem(REDIRECT_FLAG_KEY);
     setStatus("이미 로그인되어 있습니다. 기간 조회를 실행하세요.");
     return;
@@ -313,12 +364,13 @@ async function signIn() {
     await ensureTeamsReady();
     setStatus("Microsoft 로그인 창을 여는 중입니다. 로그인을 완료하세요.");
 
-    await window.microsoftTeams.authentication.authenticate({
-      url: `${window.location.origin}/auth-start.html`,
+    const authResult = await window.microsoftTeams.authentication.authenticate({
+      url: `${window.location.origin}/auth-start.html?teams=1`,
       width: 640,
       height: 720,
     });
 
+    rememberTeamsAuthResult(parseTeamsAuthResult(authResult));
     authReadyPromise = null;
     await ensureAuthReady();
     renderAccountInfo();
@@ -351,6 +403,7 @@ async function signOut() {
   }
 
   activeAccount = null;
+  teamsAuthResult = null;
   localStorage.removeItem(LAST_ACCOUNT_KEY);
   renderAccountInfo();
   setStatus("로그아웃되었습니다.");
@@ -358,6 +411,14 @@ async function signOut() {
 
 async function getAccessToken() {
   await ensureAuthReady();
+
+  if (isEmbeddedContext() && hasUsableTeamsToken()) {
+    return teamsAuthResult.accessToken;
+  }
+
+  if (isEmbeddedContext() && teamsAuthResult?.username) {
+    throw new Error("로그인 토큰이 만료되었습니다. Microsoft 로그인을 다시 실행한 뒤 조회하세요.");
+  }
 
   if (!msalClient || !activeAccount) {
     throw new Error("먼저 로그인하세요.");
