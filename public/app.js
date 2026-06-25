@@ -424,12 +424,6 @@ function renderAccountInfo() {
 }
 
 async function signIn() {
-  if (isEmbeddedContext() && hasUsableTeamsToken()) {
-    clearAuthInteractionState();
-    setStatus("이미 로그인되어 있습니다. 기간 조회를 실행하세요.");
-    return;
-  }
-
   clearStoredAuthCache();
   activeAccount = null;
   teamsAuthResult = null;
@@ -443,22 +437,6 @@ async function signIn() {
     scopes: ["openid", "profile", ...GRAPH_SCOPES],
     prompt: "login",
   };
-
-  if (isEmbeddedContext()) {
-    await ensureTeamsReady();
-    setStatus("Microsoft 로그인 창을 여는 중입니다. 로그인을 완료하세요.");
-
-    const authResult = await window.microsoftTeams.authentication.authenticate({
-      url: `${window.location.origin}/auth-start.html?teams=1`,
-      width: 640,
-      height: 720,
-    });
-
-    rememberTeamsAuthResult(parseTeamsAuthResult(authResult));
-    renderAccountInfo();
-    setStatus("로그인 성공. 기간 조회를 실행하세요.");
-    return;
-  }
 
   setStatus("Microsoft 로그인 팝업을 여는 중입니다.");
 
@@ -522,7 +500,7 @@ async function getAccessToken() {
     return teamsAuthResult.accessToken;
   }
 
-  if (!isEmbeddedContext() && hasUsableWebToken()) {
+  if (hasUsableWebToken()) {
     return webAuthResult.accessToken;
   }
 
@@ -547,12 +525,6 @@ async function getAccessToken() {
 
     return silent.accessToken;
   } catch (error) {
-    if (isEmbeddedContext()) {
-      activeAccount = null;
-      renderAccountInfo();
-      throw new Error("로그인이 만료되었거나 권한 확인이 필요합니다. Microsoft 로그인을 다시 실행한 뒤 조회하세요.");
-    }
-
     const raw = String(error?.message || "");
     const code = error?.errorCode || error?.code || "";
     if (
