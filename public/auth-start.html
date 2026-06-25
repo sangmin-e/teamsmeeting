@@ -76,18 +76,18 @@
 
       async function startAuth() {
         try {
+          if (!isTeamsAuthFlow()) {
+            sessionStorage.removeItem(TEAMS_AUTH_POPUP_KEY);
+            window.location.replace(window.location.origin);
+            return;
+          }
+
           await ensureMsalLoaded();
 
           const { clientId } = getAppConfig();
-          const redirectUri = isTeamsAuthFlow()
-            ? `${window.location.origin}/auth-end.html`
-            : window.location.origin;
+          const redirectUri = `${window.location.origin}/auth-end.html`;
 
-          if (isTeamsAuthFlow()) {
-            sessionStorage.setItem(TEAMS_AUTH_POPUP_KEY, "1");
-          } else {
-            sessionStorage.removeItem(TEAMS_AUTH_POPUP_KEY);
-          }
+          sessionStorage.setItem(TEAMS_AUTH_POPUP_KEY, "1");
 
           const client = new window.msal.PublicClientApplication({
             auth: {

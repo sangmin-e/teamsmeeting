@@ -57,6 +57,17 @@ function setStatus(message, isError = false) {
   statusEl.classList.toggle("error", isError);
 }
 
+function clearAuthInteractionState() {
+  sessionStorage.removeItem(REDIRECT_FLAG_KEY);
+
+  for (const key of Object.keys(sessionStorage)) {
+    const normalized = key.toLowerCase();
+    if (normalized.includes("interaction.status") || normalized.includes("interaction_in_progress")) {
+      sessionStorage.removeItem(key);
+    }
+  }
+}
+
 function isEmbeddedContext() {
   return window.self !== window.top;
 }
@@ -153,7 +164,8 @@ function toUserErrorMessage(error, fallback) {
   const raw = String(error?.message || "");
 
   if (code === "interaction_in_progress" || raw.includes("interaction_in_progress")) {
-    return "로그인 진행 중입니다. 열린 Microsoft 로그인 창을 먼저 완료한 뒤 다시 시도하세요.";
+    clearAuthInteractionState();
+    return "로그인 진행 상태가 남아 있어 초기화했습니다. Microsoft 로그인을 다시 눌러주세요.";
   }
 
   if (
@@ -310,7 +322,7 @@ async function ensureAuthReady() {
     await createMsalClient();
 
     const redirectResult = await msalClient.handleRedirectPromise();
-    sessionStorage.removeItem(REDIRECT_FLAG_KEY);
+    clearAuthInteractionState();
     if (redirectResult?.account) {
       activeAccount = redirectResult.account;
       msalClient.setActiveAccount(activeAccount);
