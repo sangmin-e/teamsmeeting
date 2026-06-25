@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
   "manifestVersion": "1.16",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "id": "26aaeb62-5d8e-4fb1-a8bf-63ca7ddbcbfc",
   "packageName": "com.example.teamsmeetingcopier",
   "developer": {
