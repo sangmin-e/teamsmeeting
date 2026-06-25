@@ -61,28 +61,33 @@ function setStatus(message, isError = false) {
 function clearAuthInteractionState() {
   sessionStorage.removeItem(REDIRECT_FLAG_KEY);
 
-  for (const key of Object.keys(sessionStorage)) {
-    const normalized = key.toLowerCase();
-    if (normalized.includes("interaction.status") || normalized.includes("interaction_in_progress")) {
-      sessionStorage.removeItem(key);
+  for (const storage of [sessionStorage, localStorage]) {
+    for (const key of Object.keys(storage)) {
+      const normalized = key.toLowerCase();
+      if (
+        normalized.includes("msal") ||
+        normalized.includes("interaction.status") ||
+        normalized.includes("interaction_in_progress")
+      ) {
+        storage.removeItem(key);
+      }
     }
+  }
+
+  for (const cookie of document.cookie.split(";")) {
+    const name = cookie.split("=")[0]?.trim();
+    if (!name || !name.toLowerCase().includes("msal")) {
+      continue;
+    }
+
+    document.cookie = `${name}=; Max-Age=0; path=/`;
+    document.cookie = `${name}=; Max-Age=0; path=/; domain=${window.location.hostname}`;
   }
 }
 
 function clearStoredAuthCache() {
   clearAuthInteractionState();
   localStorage.removeItem(LAST_ACCOUNT_KEY);
-
-  for (const key of Object.keys(localStorage)) {
-    const normalized = key.toLowerCase();
-    if (
-      normalized.includes("msal") ||
-      normalized.includes("interaction.status") ||
-      normalized.includes("interaction_in_progress")
-    ) {
-      localStorage.removeItem(key);
-    }
-  }
 }
 
 function hasAuthResponseInUrl() {
@@ -330,7 +335,7 @@ async function createMsalClient() {
     },
     cache: {
       cacheLocation: "sessionStorage",
-      storeAuthStateInCookie: true,
+      storeAuthStateInCookie: false,
     },
   });
 
